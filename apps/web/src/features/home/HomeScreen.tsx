@@ -144,6 +144,7 @@ export function HomeScreen() {
             <button
               type="button"
               className="inline-flex min-h-[48px] min-w-[min(100%,200px)] items-center justify-center rounded-xl bg-emerald-500 px-8 text-base font-semibold text-surface-950 shadow-xl shadow-emerald-500/20 transition hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+              onClick={() => navigate('/comecar')}
             >
               Começar agora
             </button>
