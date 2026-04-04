@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: oklch(0.98 0.02 166);
+  --color-brand-400: oklch(0.78 0.14 166);
+  --color-brand-500: oklch(0.68 0.15 166);
+  --color-brand-600: oklch(0.58 0.14 166);
+  --color-surface-900: oklch(0.17 0.02 260);
+  --color-surface-950: oklch(0.13 0.02 260);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
