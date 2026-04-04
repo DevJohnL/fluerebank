@@ -1,11 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-/**
- * E2E dos CTAs da home. Os botões ainda não navegam; os testes garantem que o
- * utilizador consegue localizar e clicar em cada um sem erros. Quando existirem
- * rotas ou scroll programático, acrescente expect(page).toHaveURL(...) ou
- * asserções na secção de destino.
- */
 test.describe('Página inicial — cliques nos CTAs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -16,7 +10,10 @@ test.describe('Página inicial — cliques nos CTAs', () => {
     await expect(cta).toBeVisible()
     await expect(cta).toBeEnabled()
     await cta.click()
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page).toHaveURL(/\/entrar$/)
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Entrar' }),
+    ).toBeVisible()
   })
 
   test('utilizador clica em Abrir conta', async ({ page }) => {

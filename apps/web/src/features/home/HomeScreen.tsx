@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -50,6 +51,8 @@ function FeatureCard({
 }
 
 export function HomeScreen() {
+  const navigate = useNavigate()
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-surface-950 font-sans text-slate-300">
       <div
@@ -102,6 +105,7 @@ export function HomeScreen() {
             <button
               type="button"
               className="min-h-[44px] rounded-xl px-4 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+              onClick={() => navigate('/entrar')}
             >
               Entrar
             </button>
