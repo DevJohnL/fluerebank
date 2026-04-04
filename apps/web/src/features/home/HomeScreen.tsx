@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { scrollParaSecaoVantagens } from './verComoFunciona'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -151,6 +152,7 @@ export function HomeScreen() {
             <button
               type="button"
               className="inline-flex min-h-[48px] min-w-[min(100%,200px)] items-center justify-center rounded-xl border border-white/15 bg-white/5 px-8 text-base font-medium text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+              onClick={scrollParaSecaoVantagens}
             >
               Ver como funciona
             </button>

@@ -43,6 +43,10 @@ test.describe('Página inicial — cliques nos CTAs', () => {
     await expect(cta).toBeVisible()
     await expect(cta).toBeEnabled()
     await cta.click()
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    const secaoVantagens = page.locator('#vantagens')
+    await expect(secaoVantagens).toBeInViewport()
+    await expect(
+      page.getByRole('heading', { name: /O essencial para o dia a dia/i }),
+    ).toBeVisible()
   })
 })
