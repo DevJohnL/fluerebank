@@ -21,7 +21,10 @@ test.describe('Página inicial — cliques nos CTAs', () => {
     await expect(cta).toBeVisible()
     await expect(cta).toBeEnabled()
     await cta.click()
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page).toHaveURL(/\/abrir-conta$/)
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Abrir conta' }),
+    ).toBeVisible()
   })
 
   test('utilizador clica em Começar agora', async ({ page }) => {

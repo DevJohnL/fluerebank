@@ -112,6 +112,7 @@ export function HomeScreen() {
             <button
               type="button"
               className="min-h-[44px] rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-surface-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+              onClick={() => navigate('/abrir-conta')}
             >
               Abrir conta
             </button>
