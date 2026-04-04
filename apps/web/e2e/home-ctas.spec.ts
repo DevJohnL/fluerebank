@@ -1,0 +1,45 @@
+import { test, expect } from '@playwright/test'
+
+/**
+ * E2E dos CTAs da home. Os botões ainda não navegam; os testes garantem que o
+ * utilizador consegue localizar e clicar em cada um sem erros. Quando existirem
+ * rotas ou scroll programático, acrescente expect(page).toHaveURL(...) ou
+ * asserções na secção de destino.
+ */
+test.describe('Página inicial — cliques nos CTAs', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('utilizador clica em Entrar', async ({ page }) => {
+    const cta = page.getByRole('button', { name: 'Entrar', exact: true })
+    await expect(cta).toBeVisible()
+    await expect(cta).toBeEnabled()
+    await cta.click()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('utilizador clica em Abrir conta', async ({ page }) => {
+    const cta = page.getByRole('button', { name: 'Abrir conta', exact: true })
+    await expect(cta).toBeVisible()
+    await expect(cta).toBeEnabled()
+    await cta.click()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('utilizador clica em Começar agora', async ({ page }) => {
+    const cta = page.getByRole('button', { name: 'Começar agora', exact: true })
+    await expect(cta).toBeVisible()
+    await expect(cta).toBeEnabled()
+    await cta.click()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('utilizador clica em Ver como funciona', async ({ page }) => {
+    const cta = page.getByRole('button', { name: 'Ver como funciona', exact: true })
+    await expect(cta).toBeVisible()
+    await expect(cta).toBeEnabled()
+    await cta.click()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+})
