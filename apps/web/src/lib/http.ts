@@ -10,6 +10,10 @@ function extractErrorMessage(parsed: unknown, fallbackText: string, status: numb
   if (parsed && typeof parsed === 'object') {
     const o = parsed as Record<string, unknown>
     if (typeof o.error === 'string') return o.error
+    if (o.error && typeof o.error === 'object') {
+      const inner = o.error as Record<string, unknown>
+      if (typeof inner.message === 'string') return inner.message
+    }
     if (typeof o.message === 'string') return o.message
     if (Array.isArray(o.message)) {
       const parts = o.message.filter((m): m is string => typeof m === 'string')

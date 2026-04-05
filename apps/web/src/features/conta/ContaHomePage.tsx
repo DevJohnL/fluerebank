@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { fetchAccountMe } from '../../lib/account'
+import { ACCESS_TOKEN_KEY } from '../../lib/session'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -27,14 +30,14 @@ type AcaoProps = {
   titulo: string
   descricao: string
   icon: ReactNode
+  to?: string
 }
 
-function AcaoRapida({ titulo, descricao, icon }: AcaoProps) {
-  return (
-    <button
-      type="button"
-      className="group flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-emerald-500/35 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-    >
+function AcaoRapida({ titulo, descricao, icon, to }: AcaoProps) {
+  const className =
+    'group flex min-h-[44px] flex-col items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-emerald-500/35 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400'
+  const inner = (
+    <>
       <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20 transition group-hover:bg-emerald-500/15">
         {icon}
       </span>
@@ -42,9 +45,23 @@ function AcaoRapida({ titulo, descricao, icon }: AcaoProps) {
         <span className="block font-semibold text-white">{titulo}</span>
         <span className="mt-0.5 block text-xs text-slate-500">{descricao}</span>
       </span>
+    </>
+  )
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {inner}
+      </Link>
+    )
+  }
+  return (
+    <button type="button" className={className}>
+      {inner}
     </button>
   )
 }
+
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const EXTRATO_MOCK = [
   {
@@ -78,6 +95,16 @@ const EXTRATO_MOCK = [
 ]
 
 export function ContaHomePage() {
+  const [balanceLabel, setBalanceLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY)
+    if (!token) return
+    fetchAccountMe(token).then((r) => {
+      if (r.ok) setBalanceLabel(brl.format(r.data.balance))
+    })
+  }, [])
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-surface-950 font-sans text-slate-300">
       <div
@@ -116,18 +143,21 @@ export function ContaHomePage() {
             Saldo disponível
           </p>
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white sm:text-4xl">
-            R$ 3.284,92
+            {balanceLabel ?? '—'}
           </p>
-          <p className="mt-2 text-sm text-slate-500">Atualizado agora · apenas demonstração</p>
+          <p className="mt-2 text-sm text-slate-500">
+            {balanceLabel ? 'Sincronizado com a API · sessão ativa' : 'Inicie sessão em Entrar para ver o saldo real'}
+          </p>
         </section>
 
         <section className="mt-10" aria-labelledby="acoes-heading">
           <h2 id="acoes-heading" className="text-lg font-semibold tracking-tight text-white">
             O que deseja fazer?
           </h2>
-          <p className="mt-1 text-sm text-slate-500">Ações rápidas — integração em breve</p>
+          <p className="mt-1 text-sm text-slate-500">Pix com idempotência no servidor</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <AcaoRapida
+              to="/conta/pix"
               titulo="Pix"
               descricao="Enviar ou receber na hora"
               icon={

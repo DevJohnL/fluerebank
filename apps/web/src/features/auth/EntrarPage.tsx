@@ -1,11 +1,11 @@
 import { type FormEvent, useId, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { loginWithPassword } from '../../lib/auth'
+import { ACCESS_TOKEN_KEY } from '../../lib/session'
 import { EMAIL_REGEX } from '../../lib/validation'
 
-const ACCESS_TOKEN_KEY = 'fluerebank_access_token'
-
 export function EntrarPage() {
+  const navigate = useNavigate()
   const formId = useId()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -49,6 +49,7 @@ export function EntrarPage() {
       }
       sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
       setStatus('success')
+      navigate('/conta', { replace: true })
     } catch (err) {
       setStatus('error')
       setErrorMessage(err instanceof Error ? err.message : 'Não foi possível iniciar sessão')
@@ -75,7 +76,7 @@ export function EntrarPage() {
           className="mt-8 max-w-md rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-emerald-200"
           role="status"
         >
-          Sessão iniciada. Pode voltar ao início ou continuar no fluxo da app.
+          Sessão iniciada. A redirecionar para a conta…
         </p>
       ) : (
         <form
