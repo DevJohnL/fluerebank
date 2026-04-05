@@ -7,12 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api/v1/auth': {
-        target: 'http://127.0.0.1:34568',
-        changeOrigin: true,
-      },
       '/api': {
-        target: 'http://127.0.0.1:34567',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     },

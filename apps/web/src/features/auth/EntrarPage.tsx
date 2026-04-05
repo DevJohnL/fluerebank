@@ -1,7 +1,8 @@
 import { type FormEvent, useId, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { loginWithPassword } from '../../lib/auth'
+import { EMAIL_REGEX } from '../../lib/validation'
 
-const LOGIN_PATH = '/api/v1/auth/login'
 const ACCESS_TOKEN_KEY = 'fluerebank_access_token'
 
 export function EntrarPage() {
@@ -17,7 +18,7 @@ export function EntrarPage() {
     const e = email.trim()
     if (!e) {
       next.email = 'Indique o seu e-mail'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+    } else if (!EMAIL_REGEX.test(e)) {
       next.email = 'E-mail inválido'
     }
     if (!password) {
@@ -35,31 +36,15 @@ export function EntrarPage() {
     setStatus('loading')
     setErrorMessage(null)
     try {
-      const base = import.meta.env.VITE_API_BASE_URL ?? ''
-      const res = await fetch(`${base}${LOGIN_PATH}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
+      const result = await loginWithPassword({
+        email: email.trim(),
+        password,
       })
-      const text = await res.text()
-      let parsed: Record<string, unknown> = {}
-      try {
-        parsed = text ? (JSON.parse(text) as Record<string, unknown>) : {}
-      } catch {
-        /* not JSON */
+      if (!result.ok) {
+        throw new Error(result.message)
       }
-      if (!res.ok) {
-        const msg =
-          typeof parsed.error === 'string'
-            ? parsed.error
-            : text || `HTTP ${res.status}`
-        throw new Error(msg)
-      }
-      const accessToken = parsed.accessToken
-      if (typeof accessToken !== 'string' || !accessToken) {
+      const { accessToken } = result.data
+      if (!accessToken) {
         throw new Error('Resposta inválida do servidor')
       }
       sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
