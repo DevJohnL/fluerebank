@@ -55,13 +55,20 @@ function reducer(state: State, action: Action): State {
         stepIndex: Math.max(0, state.stepIndex - 1),
         fieldError: null,
         errorMessage: null,
+        submitStatus: 'idle',
       }
     case 'next': {
       const step = STEPS[state.stepIndex]
       const err = validateStep(step, state.fields)
       if (err) return { ...state, fieldError: err }
       if (state.stepIndex >= STEPS.length - 1) return state
-      return { ...state, stepIndex: state.stepIndex + 1, fieldError: null }
+      return {
+        ...state,
+        stepIndex: state.stepIndex + 1,
+        fieldError: null,
+        errorMessage: null,
+        submitStatus: 'idle',
+      }
     }
     case 'submitStart':
       return { ...state, submitStatus: 'loading', errorMessage: null }
