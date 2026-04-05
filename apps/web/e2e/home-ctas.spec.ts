@@ -25,6 +25,7 @@ test.describe('Página inicial — cliques nos CTAs', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Abrir conta' }),
     ).toBeVisible()
+    await expect(page.getByLabel('Nome completo')).toBeVisible()
   })
 
   test('utilizador clica em Começar agora', async ({ page }) => {
@@ -34,8 +35,9 @@ test.describe('Página inicial — cliques nos CTAs', () => {
     await cta.click()
     await expect(page).toHaveURL(/\/comecar$/)
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Começar agora' }),
+      page.getByRole('heading', { level: 1, name: 'Abrir conta' }),
     ).toBeVisible()
+    await expect(page.getByLabel('Nome completo')).toBeVisible()
   })
 
   test('utilizador clica em Ver como funciona', async ({ page }) => {
