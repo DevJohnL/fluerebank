@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:load:onboarding": "node ../../tools/load-test/onboarding-spike.mjs"
+    "test:load:onboarding": "node ../../tools/load-test/onboarding-spike.mjs",
+    "test:load:login": "node ../../tools/load-test/login-concurrent-500.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
