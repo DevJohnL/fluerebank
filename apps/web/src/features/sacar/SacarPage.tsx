@@ -32,10 +32,12 @@ export function SacarPage() {
       navigate('/entrar', { replace: true, state: { from: '/conta/sacar' } })
       return
     }
-    setToken(t)
-    void fetchAccountMe(t).then((r) => {
-      if (r.ok) setBalanceLabel(brl.format(r.data.balance))
-    })
+    queueMicrotask(() => setToken(t))
+    void fetchAccountMe(t)
+      .then((r) => {
+        if (r.ok) setBalanceLabel(brl.format(r.data.balance))
+      })
+      .catch(() => {})
   }, [navigate])
 
   async function onSubmit(data: SacarFormValues) {

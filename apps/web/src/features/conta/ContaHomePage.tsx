@@ -91,14 +91,18 @@ export function ContaHomePage() {
       queueMicrotask(() => setMustSetPassword(false))
       return
     }
-    void fetchAccountMe(token).then((r) => {
-      if (r.ok) {
-        setBalanceLabel(brl.format(r.data.balance))
-        setMustSetPassword(r.data.mustSetPassword)
-      } else {
+    void fetchAccountMe(token)
+      .then((r) => {
+        if (r.ok) {
+          setBalanceLabel(brl.format(r.data.balance))
+          setMustSetPassword(r.data.mustSetPassword)
+        } else {
+          setMustSetPassword(false)
+        }
+      })
+      .catch(() => {
         setMustSetPassword(false)
-      }
-    })
+      })
   }, [])
 
   async function onSetPassword(e: FormEvent<HTMLFormElement>) {
