@@ -40,13 +40,13 @@ export async function fetchJson<T>(input: string | URL, init?: RequestInit): Pro
       message: extractErrorMessage(parsed, text, res.status),
     }
   }
-  /** Evita `{ ok: true, data: undefined }` quando o corpo é vazio ou não é JSON (ex.: HTML 200 do dev server se a API não estiver configurada). */
+  /** Evita `{ ok: true, data: undefined }` quando o corpo é vazio ou não é JSON (ex.: HTML 200 do dev server em vez da API). */
   if (parsed === undefined || parsed === null) {
     return {
       ok: false,
       status: res.status,
       message:
-        'Resposta inválida ou vazia (esperado JSON). Verifique se a API está a correr e se VITE_API_BASE_URL está definido.',
+        'Resposta vazia ou não JSON (HTTP OK). O pedido pode não ter chegado à API (ex.: HTML do Vite). Abra DevTools → Network e confira o URL e o corpo. Isto não significa que VITE_API_BASE_URL esteja em falta — o login já usa a mesma base.',
     }
   }
   return { ok: true, data: parsed as T }
