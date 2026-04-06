@@ -16,18 +16,22 @@ model User {
 }
 
 model Account {
-  id           String        @id @default(cuid())
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balanceCents BigInt        @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
-  pixTransfers PixTransfer[]
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceCents    BigInt           @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  transactions    Transaction[]
+  pixTransfers    PixTransfer[]
+  vaultBalance    VaultBalance?
+  guardarDeposits GuardarDeposit[]
 }
 
 enum TransactionType {
   PIX_DEBIT
+  PIX_CREDIT
+  GUARDAR_DEBIT
 }
 
 enum PixStatus {
@@ -38,14 +42,15 @@ enum PixStatus {
 }
 
 model Transaction {
-  id          String           @id @default(cuid())
-  accountId   String
-  account     Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  type        TransactionType
-  amountCents BigInt
-  description String?
-  createdAt   DateTime         @default(now())
-  pixTransfer PixTransfer?
+  id             String           @id @default(cuid())
+  accountId      String
+  account        Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type           TransactionType
+  amountCents    BigInt
+  description    String?
+  createdAt      DateTime         @default(now())
+  pixTransfer    PixTransfer?
+  guardarDeposit GuardarDeposit?
 
   @@index([accountId, createdAt])
 }
@@ -62,6 +67,27 @@ model PixTransfer {
   transactionId  String        @unique
   transaction    Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
+
+  @@unique([accountId, idempotencyKey])
+}
+
+model VaultBalance {
+  id           String   @id @default(cuid())
+  accountId    String   @unique
+  account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  balanceCents BigInt   @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model GuardarDeposit {
+  id             String      @id @default(cuid())
+  accountId      String
+  account        Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  idempotencyKey String
+  amountCents    BigInt
+  transactionId  String      @unique
+  transaction    Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
 
   @@unique([accountId, idempotencyKey])
 }
