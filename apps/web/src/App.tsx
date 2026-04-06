@@ -3,7 +3,9 @@ import { EntrarPage } from './features/auth/EntrarPage'
 import { ContaHomePage } from './features/conta/ContaHomePage'
 import { HomeScreen } from './features/home/HomeScreen'
 import { OnboardingContaPage } from './features/onboarding/OnboardingContaPage'
+import { GuardarPage } from './features/guardar/GuardarPage'
 import { PixPage } from './features/pix/PixPage'
+import { SacarPage } from './features/sacar/SacarPage'
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
       <Route path="/comecar" element={<OnboardingContaPage />} />
       <Route path="/conta" element={<ContaHomePage />} />
       <Route path="/conta/pix" element={<PixPage />} />
+      <Route path="/conta/guardar" element={<GuardarPage />} />
+      <Route path="/conta/sacar" element={<SacarPage />} />
     </Routes>
   )
 }

@@ -1,11 +1,11 @@
 import { HttpException } from '@nestjs/common'
 import { describe, expect, it, vi } from 'vitest'
+import type { PrismaService } from '../prisma/prisma.service'
+import { GuardarService } from './guardar.service'
 
 /**
- * Regras de negócio planejadas (TDD): Guardar move valor do saldo disponível para o cofre;
- * o extrato regista a saída (débito); o montante guardado só é visível na área Guardar.
- *
- * Quando `GuardarService` existir, o caso de uso real deve substituir `guardarDepositPlanned`.
+ * Regras de negócio (TDD): Guardar move valor do saldo disponível para o cofre;
+ * o extrato regista a saída (GUARDAR_DEBIT); validação de saldo antes de abrir transação na BD.
  */
 
 type TxMock = {
@@ -14,6 +14,10 @@ type TxMock = {
     update: ReturnType<typeof vi.fn>
   }
   transaction: {
+    create: ReturnType<typeof vi.fn>
+  }
+  guardarDeposit: {
+    findUnique: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
   }
   vaultBalance: {
@@ -28,6 +32,10 @@ function createTxMock(): TxMock {
       update: vi.fn(),
     },
     transaction: {
+      create: vi.fn(),
+    },
+    guardarDeposit: {
+      findUnique: vi.fn(),
       create: vi.fn(),
     },
     vaultBalance: {
@@ -50,63 +58,8 @@ function createGuardarPrismaMock(tx: TxMock): GuardarPrismaMock {
     account: {
       findUnique: vi.fn(),
     },
-    /** Comportamento semelhante ao Prisma: executa o callback na mesma “unidade lógica”. */
     $transaction: vi.fn((fn: (t: TxMock) => Promise<unknown>) => fn(tx)),
   }
-}
-
-/**
- * Comportamento esperado do fluxo Guardar até existir implementação no serviço Nest.
- * Valida saldo **antes** de abrir transação na BD para falhar cedo e evitar trabalho inútil.
- */
-async function guardarDepositPlanned(
-  prisma: GuardarPrismaMock,
-  userId: string,
-  amountCents: bigint,
-): Promise<void> {
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user) {
-    throw new HttpException({ error: { code: 'UNAUTHORIZED', message: 'Invalid session' } }, 401)
-  }
-
-  const accPreview = await prisma.account.findUnique({ where: { userId } })
-  if (!accPreview) {
-    throw new HttpException({ error: { code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' } }, 404)
-  }
-  if (accPreview.balanceCents < amountCents) {
-    throw new HttpException(
-      {
-        error: {
-          code: 'INSUFFICIENT_BALANCE',
-          message: 'Saldo insuficiente para guardar este valor.',
-        },
-      },
-      400,
-    )
-  }
-
-  await prisma.$transaction(async (tx: TxMock) => {
-    const acc = await tx.account.findUnique({ where: { userId } })
-    if (!acc) {
-      throw new HttpException({ error: { code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' } }, 404)
-    }
-    await tx.transaction.create({
-      data: {
-        accountId: acc.id,
-        type: 'GUARDAR_DEBIT',
-        amountCents,
-      },
-    })
-    await tx.account.update({
-      where: { id: acc.id },
-      data: { balanceCents: acc.balanceCents - amountCents },
-    })
-    await tx.vaultBalance.upsert({
-      where: { accountId: acc.id },
-      create: { accountId: acc.id, balanceCents: amountCents },
-      update: { balanceCents: { increment: amountCents } },
-    })
-  })
 }
 
 describe('Guardar — saldo insuficiente', () => {
@@ -119,8 +72,10 @@ describe('Guardar — saldo insuficiente', () => {
       balanceCents: 50n,
     })
 
+    const service = new GuardarService(prisma as unknown as PrismaService)
+
     try {
-      await guardarDepositPlanned(prisma, 'user-1', 100n)
+      await service.deposit('user-1', 'idem-1', 100n)
     } catch (e) {
       expect(e).toBeInstanceOf(HttpException)
       const ex = e as HttpException
@@ -155,11 +110,28 @@ describe('Guardar — falha de rede / rollback', () => {
       userId: 'user-1',
       balanceCents: 10_000n,
     })
+    tx.guardarDeposit.findUnique.mockResolvedValue(null)
     tx.transaction.create.mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       type: 'GUARDAR_DEBIT',
       amountCents: 1_000n,
+    })
+    tx.guardarDeposit.create.mockResolvedValue({
+      id: 'gd-1',
+      accountId: 'acc-1',
+      idempotencyKey: 'idem-1',
+      amountCents: 1_000n,
+      transactionId: 'tx-1',
+      createdAt: new Date(),
+      transaction: {
+        id: 'tx-1',
+        accountId: 'acc-1',
+        type: 'GUARDAR_DEBIT',
+        amountCents: 1_000n,
+        description: null,
+        createdAt: new Date(),
+      },
     })
     tx.account.update.mockResolvedValue({ id: 'acc-1', balanceCents: 9000n })
     tx.vaultBalance.upsert.mockRejectedValue(new Error('ECONNRESET'))
@@ -176,7 +148,9 @@ describe('Guardar — falha de rede / rollback', () => {
       }
     })
 
-    await expect(guardarDepositPlanned(prisma, 'user-1', 1000n)).rejects.toThrow(/ECONNRESET/)
+    const service = new GuardarService(prisma as unknown as PrismaService)
+
+    await expect(service.deposit('user-1', 'idem-1', 1000n)).rejects.toThrow(/ECONNRESET/)
     expect(committed).toBe(false)
   })
 })
