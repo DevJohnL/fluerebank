@@ -28,6 +28,7 @@ model Account {
 
 enum TransactionType {
   PIX_DEBIT
+  PIX_CREDIT
 }
 
 enum PixStatus {
