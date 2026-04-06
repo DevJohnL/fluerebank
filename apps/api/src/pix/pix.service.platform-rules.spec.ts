@@ -16,6 +16,9 @@ type TxMock = {
     findFirst: ReturnType<typeof vi.fn>
     update: ReturnType<typeof vi.fn>
   }
+  user: {
+    findUnique: ReturnType<typeof vi.fn>
+  }
   pixTransfer: {
     findUnique: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
@@ -31,6 +34,9 @@ function createTxMock(): TxMock {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
     },
     pixTransfer: {
       findUnique: vi.fn(),
@@ -162,6 +168,8 @@ describe('PixService — balance and statement stay in sync for same-hour send a
       userId: 'user-receiver',
       balanceCents: receiverInitial,
     })
+
+    tx.user.findUnique.mockResolvedValue({ email: 'remetente@fluerebank.local' })
 
     const at = new Date('2026-04-05T14:30:00.000Z')
 

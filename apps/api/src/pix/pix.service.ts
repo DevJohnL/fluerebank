@@ -70,6 +70,39 @@ export class PixService {
           return this.toResponse(existing, true)
         }
 
+        const recipientAccount = await tx.account.findFirst({
+          where: {
+            user: {
+              email: { equals: pixKey, mode: 'insensitive' },
+            },
+          },
+        })
+
+        if (!recipientAccount) {
+          throw new HttpException(
+            {
+              error: {
+                code: 'RECIPIENT_NOT_ON_PLATFORM',
+                message:
+                  'Não existe conta na plataforma para esta chave Pix. Confirme o e-mail ou contacto do destinatário.',
+              },
+            },
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+
+        if (recipientAccount.id === account.id) {
+          throw new HttpException(
+            {
+              error: {
+                code: 'CANNOT_TRANSFER_TO_SELF',
+                message: 'Não é possível enviar Pix para a sua própria conta.',
+              },
+            },
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+
         if (account.balanceCents < amountCents) {
           throw new HttpException(
             {
@@ -82,14 +115,34 @@ export class PixService {
           )
         }
 
-        const description = `Pix enviado · ${pixKey}`
+        const senderUser = await tx.user.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        })
+        const senderLabel = senderUser?.email ?? 'remetente'
 
-        const ledger = await tx.transaction.create({
+        const ledgerAt = new Date()
+
+        const debitDescription = `Pix enviado · ${pixKey}`
+        const creditDescription = `Pix recebido · ${senderLabel}`
+
+        const ledgerDebit = await tx.transaction.create({
           data: {
             accountId: account.id,
             type: 'PIX_DEBIT',
             amountCents,
-            description,
+            description: debitDescription,
+            createdAt: ledgerAt,
+          },
+        })
+
+        await tx.transaction.create({
+          data: {
+            accountId: recipientAccount.id,
+            type: 'PIX_CREDIT',
+            amountCents,
+            description: creditDescription,
+            createdAt: ledgerAt,
           },
         })
 
@@ -101,7 +154,7 @@ export class PixService {
             pixKey,
             reference: dto.reference?.trim() || null,
             status: 'COMPLETED',
-            transactionId: ledger.id,
+            transactionId: ledgerDebit.id,
           },
           include: { transaction: true },
         })
@@ -109,6 +162,11 @@ export class PixService {
         await tx.account.update({
           where: { id: account.id },
           data: { balanceCents: account.balanceCents - amountCents },
+        })
+
+        await tx.account.update({
+          where: { id: recipientAccount.id },
+          data: { balanceCents: recipientAccount.balanceCents + amountCents },
         })
 
         return this.toResponse(pix, false)
