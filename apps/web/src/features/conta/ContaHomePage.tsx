@@ -77,8 +77,23 @@ const EXTRATO_MOCK = [
 const INPUT_CLASS =
   'min-h-[48px] w-full rounded-xl border border-white/10 bg-surface-900 px-4 py-2 text-base text-white outline-none transition focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30'
 
+function getStoredAccessToken(): string | null {
+  try {
+    return sessionStorage.getItem(ACCESS_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+/** Saldo ainda não chegou, pedido em curso ou falhou — não confundir com “sem sessão”. */
+type BalanceLineState = 'no_session' | 'loading' | 'ready' | 'error'
+
 export function ContaHomePage() {
   const [balanceLabel, setBalanceLabel] = useState<string | null>(null)
+  const [balanceLoadError, setBalanceLoadError] = useState<string | null>(null)
+  const [balanceLineState, setBalanceLineState] = useState<BalanceLineState>(() =>
+    getStoredAccessToken() ? 'loading' : 'no_session',
+  )
   const [mustSetPassword, setMustSetPassword] = useState<boolean | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -86,19 +101,32 @@ export function ContaHomePage() {
   const [pwSaving, setPwSaving] = useState(false)
 
   useEffect(() => {
-    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY)
+    const token = getStoredAccessToken()
     if (!token) {
-      setMustSetPassword(false)
+      queueMicrotask(() => {
+        setMustSetPassword(false)
+        setBalanceLineState('no_session')
+      })
       return
     }
-    void fetchAccountMe(token).then((r) => {
-      if (r.ok) {
-        setBalanceLabel(brl.format(r.data.balance))
-        setMustSetPassword(r.data.mustSetPassword)
-      } else {
+    void fetchAccountMe(token)
+      .then((r) => {
+        if (r.ok) {
+          setBalanceLoadError(null)
+          setBalanceLabel(brl.format(r.data.balance))
+          setMustSetPassword(r.data.mustSetPassword)
+          setBalanceLineState('ready')
+        } else {
+          setBalanceLoadError(r.message)
+          setMustSetPassword(false)
+          setBalanceLineState('error')
+        }
+      })
+      .catch((err: unknown) => {
+        setBalanceLoadError(err instanceof Error ? err.message : 'Falha de rede ao contactar a API.')
         setMustSetPassword(false)
-      }
-    })
+        setBalanceLineState('error')
+      })
   }, [])
 
   async function onSetPassword(e: FormEvent<HTMLFormElement>) {
@@ -237,10 +265,25 @@ export function ContaHomePage() {
             Saldo disponível
           </p>
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white sm:text-4xl">
-            {balanceLabel ?? '—'}
+            {balanceLineState === 'loading' ? (
+              <span className="text-xl font-medium text-slate-500">A carregar…</span>
+            ) : (
+              (balanceLabel ?? '—')
+            )}
           </p>
           <p className="mt-2 text-sm text-slate-500">
-            {balanceLabel ? 'Sincronizado com a API · sessão ativa' : 'Inicie sessão em Entrar para ver o saldo real'}
+            {balanceLineState === 'no_session' &&
+              'Inicie sessão em Entrar para ver o saldo real'}
+            {balanceLineState === 'loading' && 'A sincronizar com a API…'}
+            {balanceLineState === 'error' && (
+              <>
+                Não foi possível carregar o saldo. O início de sessão e o saldo usam o mesmo URL base; se entrou com sucesso, o problema costuma ser o pedido ao saldo (token, resposta inesperada).
+                {balanceLoadError ? (
+                  <span className="mt-2 block text-xs text-amber-200/90">{balanceLoadError}</span>
+                ) : null}
+              </>
+            )}
+            {balanceLineState === 'ready' && 'Sincronizado com a API · sessão ativa'}
           </p>
         </section>
 
@@ -270,6 +313,7 @@ export function ContaHomePage() {
               }
             />
             <AcaoRapida
+              to="/conta/sacar"
               titulo="Sacar"
               descricao="Caixa eletrónico ou loja"
               icon={
@@ -279,6 +323,7 @@ export function ContaHomePage() {
               }
             />
             <AcaoRapida
+              to="/conta/guardar"
               titulo="Guardar"
               descricao="Reservar para objetivos"
               icon={

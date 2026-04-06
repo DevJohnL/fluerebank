@@ -82,14 +82,55 @@ export class PixService {
           )
         }
 
-        const description = `Pix enviado · ${pixKey}`
+        const recipientAccount = await tx.account.findFirst({
+          where: { user: { email: pixKey } },
+          select: { id: true, balanceCents: true, userId: true },
+        })
 
-        const ledger = await tx.transaction.create({
+        if (!recipientAccount) {
+          throw new HttpException(
+            {
+              error: {
+                code: 'RECIPIENT_NOT_ON_PLATFORM',
+                message: 'Não existe conta na plataforma para esta chave Pix.',
+              },
+            },
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+
+        if (recipientAccount.id === account.id) {
+          throw new HttpException(
+            {
+              error: {
+                code: 'CANNOT_TRANSFER_TO_SELF',
+                message: 'Não pode enviar Pix para a própria conta.',
+              },
+            },
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+
+        const description = `Pix enviado · ${pixKey}`
+        const ledgerAt = new Date()
+
+        const ledgerDebit = await tx.transaction.create({
           data: {
             accountId: account.id,
             type: 'PIX_DEBIT',
             amountCents,
             description,
+            createdAt: ledgerAt,
+          },
+        })
+
+        await tx.transaction.create({
+          data: {
+            accountId: recipientAccount.id,
+            type: 'PIX_CREDIT',
+            amountCents,
+            description: `Pix recebido · ${pixKey}`,
+            createdAt: ledgerAt,
           },
         })
 
@@ -101,7 +142,7 @@ export class PixService {
             pixKey,
             reference: dto.reference?.trim() || null,
             status: 'COMPLETED',
-            transactionId: ledger.id,
+            transactionId: ledgerDebit.id,
           },
           include: { transaction: true },
         })
@@ -109,6 +150,11 @@ export class PixService {
         await tx.account.update({
           where: { id: account.id },
           data: { balanceCents: account.balanceCents - amountCents },
+        })
+
+        await tx.account.update({
+          where: { id: recipientAccount.id },
+          data: { balanceCents: recipientAccount.balanceCents + amountCents },
         })
 
         return this.toResponse(pix, false)
