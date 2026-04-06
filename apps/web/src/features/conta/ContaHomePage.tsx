@@ -88,17 +88,21 @@ export function ContaHomePage() {
   useEffect(() => {
     const token = sessionStorage.getItem(ACCESS_TOKEN_KEY)
     if (!token) {
-      setMustSetPassword(false)
+      queueMicrotask(() => setMustSetPassword(false))
       return
     }
-    void fetchAccountMe(token).then((r) => {
-      if (r.ok) {
-        setBalanceLabel(brl.format(r.data.balance))
-        setMustSetPassword(r.data.mustSetPassword)
-      } else {
+    void fetchAccountMe(token)
+      .then((r) => {
+        if (r.ok) {
+          setBalanceLabel(brl.format(r.data.balance))
+          setMustSetPassword(r.data.mustSetPassword)
+        } else {
+          setMustSetPassword(false)
+        }
+      })
+      .catch(() => {
         setMustSetPassword(false)
-      }
-    })
+      })
   }, [])
 
   async function onSetPassword(e: FormEvent<HTMLFormElement>) {
@@ -270,6 +274,7 @@ export function ContaHomePage() {
               }
             />
             <AcaoRapida
+              to="/conta/sacar"
               titulo="Sacar"
               descricao="Caixa eletrónico ou loja"
               icon={
@@ -279,6 +284,7 @@ export function ContaHomePage() {
               }
             />
             <AcaoRapida
+              to="/conta/guardar"
               titulo="Guardar"
               descricao="Reservar para objetivos"
               icon={
